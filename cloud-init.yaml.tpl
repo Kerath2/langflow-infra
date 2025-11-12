@@ -85,14 +85,19 @@ write_files:
           continue
         fi
 
-        # Crear la tabla crm_data
-        echo "  → Creando tabla crm_data..." | tee -a /var/log/crm-setup.log
-        podman exec $POSTGRES_CONTAINER psql -U langflow -d langflow_db -c "CREATE TABLE IF NOT EXISTS crm_data (id SERIAL PRIMARY KEY, nombre_completo TEXT NOT NULL, numero_documento BIGINT NOT NULL, edad INTEGER NOT NULL, estado_laboral TEXT NOT NULL, ingreso_mensual INTEGER NOT NULL, egresos_mensuales INTEGER NOT NULL, tarjeta_de_credito_bronce BOOLEAN NOT NULL, tarjeta_de_credito_plata BOOLEAN NOT NULL, tarjeta_de_credito_oro BOOLEAN NOT NULL, cuenta_ahorros BOOLEAN NOT NULL, seguro_mascotas BOOLEAN NOT NULL, seguro_desempleo BOOLEAN NOT NULL, complemento_medico BOOLEAN NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);"
-        podman exec $POSTGRES_CONTAINER psql -U langflow -d langflow_db -c "CREATE INDEX IF NOT EXISTS idx_crm_numero_documento ON crm_data(numero_documento);"
-        podman exec $POSTGRES_CONTAINER psql -U langflow -d langflow_db -c "CREATE INDEX IF NOT EXISTS idx_crm_estado_laboral ON crm_data(estado_laboral);"
-        podman exec $POSTGRES_CONTAINER psql -U langflow -d langflow_db -c "CREATE INDEX IF NOT EXISTS idx_crm_ingreso ON crm_data(ingreso_mensual);"
-        podman exec $POSTGRES_CONTAINER psql -U langflow -d langflow_db -c "GRANT ALL PRIVILEGES ON TABLE crm_data TO langflow;"
-        podman exec $POSTGRES_CONTAINER psql -U langflow -d langflow_db -c "GRANT USAGE, SELECT ON SEQUENCE crm_data_id_seq TO langflow;"
+        # Crear esquema CRM separado para evitar conflictos con Alembic de Langflow
+        echo "  → Creando esquema CRM..." | tee -a /var/log/crm-setup.log
+        podman exec $POSTGRES_CONTAINER psql -U langflow -d langflow_db -c "CREATE SCHEMA IF NOT EXISTS crm;"
+        podman exec $POSTGRES_CONTAINER psql -U langflow -d langflow_db -c "GRANT ALL ON SCHEMA crm TO langflow;"
+
+        # Crear la tabla crm_data en el esquema crm
+        echo "  → Creando tabla crm.crm_data..." | tee -a /var/log/crm-setup.log
+        podman exec $POSTGRES_CONTAINER psql -U langflow -d langflow_db -c "CREATE TABLE IF NOT EXISTS crm.crm_data (id SERIAL PRIMARY KEY, nombre_completo TEXT NOT NULL, numero_documento BIGINT NOT NULL, edad INTEGER NOT NULL, estado_laboral TEXT NOT NULL, ingreso_mensual INTEGER NOT NULL, egresos_mensuales INTEGER NOT NULL, tarjeta_de_credito_bronce BOOLEAN NOT NULL, tarjeta_de_credito_plata BOOLEAN NOT NULL, tarjeta_de_credito_oro BOOLEAN NOT NULL, cuenta_ahorros BOOLEAN NOT NULL, seguro_mascotas BOOLEAN NOT NULL, seguro_desempleo BOOLEAN NOT NULL, complemento_medico BOOLEAN NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);"
+        podman exec $POSTGRES_CONTAINER psql -U langflow -d langflow_db -c "CREATE INDEX IF NOT EXISTS idx_crm_numero_documento ON crm.crm_data(numero_documento);"
+        podman exec $POSTGRES_CONTAINER psql -U langflow -d langflow_db -c "CREATE INDEX IF NOT EXISTS idx_crm_estado_laboral ON crm.crm_data(estado_laboral);"
+        podman exec $POSTGRES_CONTAINER psql -U langflow -d langflow_db -c "CREATE INDEX IF NOT EXISTS idx_crm_ingreso ON crm.crm_data(ingreso_mensual);"
+        podman exec $POSTGRES_CONTAINER psql -U langflow -d langflow_db -c "GRANT ALL PRIVILEGES ON TABLE crm.crm_data TO langflow;"
+        podman exec $POSTGRES_CONTAINER psql -U langflow -d langflow_db -c "GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA crm TO langflow;"
 
         if [ $? -eq 0 ]; then
           echo "  ✓ Tabla crm_data creada exitosamente" | tee -a /var/log/crm-setup.log
@@ -118,11 +123,11 @@ write_files:
 
         # Importar datos desde CSV con codificación UTF-8 explícita
         echo "  → Importando datos desde CSV..." | tee -a /var/log/crm-setup.log
-        podman exec $POSTGRES_CONTAINER psql -U langflow -d langflow_db -c "SET client_encoding = 'UTF8'; COPY crm_data (nombre_completo, numero_documento, edad, estado_laboral, ingreso_mensual, egresos_mensuales, tarjeta_de_credito_bronce, tarjeta_de_credito_plata, tarjeta_de_credito_oro, cuenta_ahorros, seguro_mascotas, seguro_desempleo, complemento_medico) FROM '/tmp/crm_data.csv' WITH (FORMAT CSV, DELIMITER ';', HEADER true, ENCODING 'UTF8');"
+        podman exec $POSTGRES_CONTAINER psql -U langflow -d langflow_db -c "SET client_encoding = 'UTF8'; COPY crm.crm_data (nombre_completo, numero_documento, edad, estado_laboral, ingreso_mensual, egresos_mensuales, tarjeta_de_credito_bronce, tarjeta_de_credito_plata, tarjeta_de_credito_oro, cuenta_ahorros, seguro_mascotas, seguro_desempleo, complemento_medico) FROM '/tmp/crm_data.csv' WITH (FORMAT CSV, DELIMITER ';', HEADER true, ENCODING 'UTF8');"
 
         if [ $? -eq 0 ]; then
           # Verificar cuántos registros se importaron
-          RECORD_COUNT=$(podman exec $POSTGRES_CONTAINER psql -U langflow -d langflow_db -t -c "SELECT COUNT(*) FROM crm_data;")
+          RECORD_COUNT=$(podman exec $POSTGRES_CONTAINER psql -U langflow -d langflow_db -t -c "SELECT COUNT(*) FROM crm.crm_data;")
           echo "  ✓ Datos CRM importados exitosamente: $RECORD_COUNT registros" | tee -a /var/log/crm-setup.log
         else
           echo "  ✗ Error al importar datos CRM" | tee -a /var/log/crm-setup.log
