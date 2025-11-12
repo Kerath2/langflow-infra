@@ -57,7 +57,7 @@ for i in $(seq 1 $INSTANCES); do
   VARIABLE_RESPONSE=$(curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST "http://127.0.0.1:${LANGFLOW_PORT}/api/v1/variables/" \
     -H "Content-Type: application/json" \
     -H "Authorization: Bearer $TOKEN" \
-    -d "{\"name\":\"API_KEY\",\"value\":\"$API_KEY\",\"type\":\"Credential\",\"default_fields\":[\"OpenAI API Key\",\"Anthropic API Key\",\"Google API Key\"]}" 2>/dev/null || echo "")
+    -d "{\"name\":\"API_KEY\",\"value\":\"$API_KEY\",\"type\":\"Credential\"}" 2>/dev/null || echo "")
 
   HTTP_STATUS=$(echo "$VARIABLE_RESPONSE" | grep "HTTP_STATUS:" | cut -d: -f2)
 
