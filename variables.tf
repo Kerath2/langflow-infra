@@ -77,9 +77,9 @@ variable "vsi_count" {
 }
 
 variable "vsi_profile" {
-  description = "Perfil de la VSI (determina CPU y RAM). cx2-2x4 = 2 vCPU, 4GB RAM (~$65/mes)"
+  description = "Perfil de la VSI (determina CPU y RAM). cx2-2x8 = 2 vCPU, 8GB RAM"
   type        = string
-  default     = "cx2-2x4"
+  default     = "cx2-2x8"
 }
 
 variable "os_image_name" {
@@ -113,9 +113,9 @@ variable "langflow_enabled" {
 }
 
 variable "langflow_instances_per_vsi" {
-  description = "Número de instancias de Langflow a ejecutar por VSI (1 instancia soporta múltiples usuarios)"
+  description = "Número de instancias de Langflow a ejecutar por VSI (cada una con su PostgreSQL dedicado)"
   type        = number
-  default     = 1
+  default     = 2
   validation {
     condition     = var.langflow_instances_per_vsi > 0 && var.langflow_instances_per_vsi <= 10
     error_message = "El número de instancias de Langflow debe estar entre 1 y 10."
