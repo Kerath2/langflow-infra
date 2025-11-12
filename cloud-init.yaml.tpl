@@ -13,12 +13,13 @@ packages:
 write_files:
   - path: /root/crm_data.csv
     permissions: '0644'
+    encoding: utf-8
     content: |
       nombre_completo;numero_documento;edad;estado_laboral;ingreso_mensual;egresos_mensuales;tarjeta_de_credito_bronce;tarjeta_de_credito_plata;tarjeta_de_credito_oro;cuenta_ahorros;seguro_mascotas;seguro_desempleo;complemento_medico
       Camila Lopez;18531599;19;Pensionado;2500;1500;true;true;true;false;true;true;true
       Alejandra Prieto;10133530;32;Empleado;2500;2000;true;false;true;true;true;true;true
       Daniela Rincon;61617074;69;Empleado;2500;2200;true;true;true;true;true;true;true
-      Monica alvarez;75715932;47;Empleado;2500;1800;false;false;true;true;true;true;true
+      Monica Alvarez;75715932;47;Empleado;2500;1800;false;false;true;true;true;true;true
       Ana Martinez;11620162;32;Estudiante;2500;1900;true;true;false;true;false;true;false
       Esteban Quintero;27053089;41;Informal;2500;1500;false;true;true;true;true;true;true
       Diana Morales;14437506;61;Empleado;2500;2000;true;true;false;false;false;false;false
@@ -43,8 +44,8 @@ write_files:
       Valentina Ortiz;68744720;63;Empleado;5000;1500;true;false;true;true;true;true;true
       Javier Ramirez;52723624;69;Independiente;2500;2000;false;true;true;true;true;false;true
       Ricardo Silva;72078781;35;Independiente;5000;2200;true;false;false;true;true;true;false
-      Julian Castaño;90158223;44;Empleado;2500;1800;true;true;true;true;true;true;true
-      David Patiño;13546408;49;Pensionado;2500;1900;true;true;false;false;true;true;false
+      Julian Castano;90158223;44;Empleado;2500;1800;true;true;true;true;true;true;true
+      David Patino;13546408;49;Pensionado;2500;1900;true;true;false;false;true;true;false
 
   - path: /root/setup-crm-database.sh
     permissions: '0755'
@@ -123,12 +124,27 @@ EOF
           continue
         fi
 
-        # Copiar CSV al contenedor
+        # Copiar CSV al contenedor con verificación
         echo "  → Copiando datos CRM..." | tee -a /var/log/crm-setup.log
-        podman cp /root/crm_data.csv $POSTGRES_CONTAINER:/tmp/crm_data.csv
+        if ! podman cp /root/crm_data.csv $POSTGRES_CONTAINER:/tmp/crm_data.csv; then
+          echo "  ✗ Error al copiar CSV al contenedor" | tee -a /var/log/crm-setup.log
+          continue
+        fi
 
-        # Importar datos desde CSV
+        # Verificar que el archivo se copió correctamente
+        if ! podman exec $POSTGRES_CONTAINER test -f /tmp/crm_data.csv; then
+          echo "  ✗ CSV no encontrado en el contenedor" | tee -a /var/log/crm-setup.log
+          continue
+        fi
+
+        echo "  ✓ CSV copiado exitosamente" | tee -a /var/log/crm-setup.log
+
+        # Importar datos desde CSV con codificación UTF-8 explícita
+        echo "  → Importando datos desde CSV..." | tee -a /var/log/crm-setup.log
         podman exec $POSTGRES_CONTAINER psql -U langflow -d langflow_db <<EOF
+-- Configurar cliente para UTF-8
+SET client_encoding = 'UTF8';
+
 -- Importar datos desde CSV
 COPY crm_data (
     nombre_completo,
@@ -146,8 +162,12 @@ COPY crm_data (
     complemento_medico
 )
 FROM '/tmp/crm_data.csv'
-DELIMITER ';'
-CSV HEADER;
+WITH (
+    FORMAT CSV,
+    DELIMITER ';',
+    HEADER true,
+    ENCODING 'UTF8'
+);
 EOF
 
         if [ $? -eq 0 ]; then
