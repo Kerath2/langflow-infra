@@ -266,7 +266,7 @@ write_files:
         RETRY_COUNT=0
         TOKEN=""
 
-        while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+        while [ $$RETRY_COUNT -lt $$MAX_RETRIES ]; do
           # Obtener token via auto_login
           LOGIN_RESPONSE=$$(curl -s -X GET "http://127.0.0.1:$${LANGFLOW_PORT}/api/v1/auto_login" 2>/dev/null || echo "")
 
@@ -279,7 +279,8 @@ write_files:
             fi
           fi
 
-          echo "  ⚠ Esperando a que Langflow instancia $i esté listo (intento $$((RETRY_COUNT + 1))/$$MAX_RETRIES)..." | tee -a /var/log/api-key-setup.log
+          CURRENT_TRY=$$((RETRY_COUNT + 1))
+          echo "  ⚠ Esperando a que Langflow instancia $i esté listo (intento $$CURRENT_TRY/$$MAX_RETRIES)..." | tee -a /var/log/api-key-setup.log
           sleep 5
           RETRY_COUNT=$$((RETRY_COUNT + 1))
         done
