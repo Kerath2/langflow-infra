@@ -76,7 +76,7 @@ for i in $(seq 1 $INSTANCES); do
   DB_URI_RESPONSE=$(curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST "http://127.0.0.1:${LANGFLOW_PORT}/api/v1/variables/" \
     -H "Content-Type: application/json" \
     -H "Authorization: Bearer $TOKEN" \
-    -d "{\"name\":\"DB_URI\",\"value\":\"$DB_URI\",\"type\":\"Generic\"}" 2>/dev/null || echo "")
+    -d "{\"name\":\"DB_URI\",\"value\":\"$DB_URI\",\"type\":\"Generic\",\"default_fields\":[]}" 2>/dev/null || echo "")
 
   DB_URI_HTTP_STATUS=$(echo "$DB_URI_RESPONSE" | grep "HTTP_STATUS:" | cut -d: -f2)
 
