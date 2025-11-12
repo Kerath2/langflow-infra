@@ -1,0 +1,120 @@
+{
+  "name": "OpenAI Preconfigured Flow",
+  "description": "Flow with OpenAI Language Model pre-configured with API key",
+  "data": {
+    "nodes": [
+      {
+        "id": "LanguageModel-1",
+        "type": "LanguageModel",
+        "position": {
+          "x": 400,
+          "y": 200
+        },
+        "data": {
+          "type": "LanguageModel",
+          "node": {
+            "template": {
+              "provider": {
+                "value": "OpenAI",
+                "type": "str"
+              },
+              "model_name": {
+                "value": "gpt-4o-mini",
+                "type": "str"
+              },
+              "api_key": {
+                "value": "sk-proj-test1234567890abcdefghijklmnopqrstuvwxyz",
+                "type": "str",
+                "password": true
+              },
+              "input_value": {
+                "value": "",
+                "type": "Message"
+              },
+              "system_message": {
+                "value": "You are a helpful assistant.",
+                "type": "str"
+              },
+              "stream": {
+                "value": false,
+                "type": "bool"
+              },
+              "temperature": {
+                "value": 0.1,
+                "type": "float"
+              }
+            },
+            "description": "Runs a language model given a specified provider.",
+            "base_classes": ["LanguageModel"],
+            "display_name": "Language Model"
+          }
+        }
+      },
+      {
+        "id": "ChatInput-1",
+        "type": "ChatInput",
+        "position": {
+          "x": 100,
+          "y": 200
+        },
+        "data": {
+          "type": "ChatInput",
+          "node": {
+            "template": {
+              "input_value": {
+                "value": "",
+                "type": "str"
+              }
+            },
+            "description": "Chat input component",
+            "base_classes": ["Message"],
+            "display_name": "Chat Input"
+          }
+        }
+      },
+      {
+        "id": "ChatOutput-1",
+        "type": "ChatOutput",
+        "position": {
+          "x": 700,
+          "y": 200
+        },
+        "data": {
+          "type": "ChatOutput",
+          "node": {
+            "template": {
+              "input_value": {
+                "value": "",
+                "type": "Message"
+              }
+            },
+            "description": "Chat output component",
+            "base_classes": ["Message"],
+            "display_name": "Chat Output"
+          }
+        }
+      }
+    ],
+    "edges": [
+      {
+        "id": "ChatInput-1-LanguageModel-1",
+        "source": "ChatInput-1",
+        "target": "LanguageModel-1",
+        "sourceHandle": "output",
+        "targetHandle": "input_value"
+      },
+      {
+        "id": "LanguageModel-1-ChatOutput-1",
+        "source": "LanguageModel-1",
+        "target": "ChatOutput-1",
+        "sourceHandle": "output",
+        "targetHandle": "input_value"
+      }
+    ]
+  },
+  "is_component": false,
+  "updated_at": "2025-11-11T00:00:00.000000",
+  "folder": null,
+  "id": null,
+  "user_id": null
+}

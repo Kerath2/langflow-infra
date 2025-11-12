@@ -1,0 +1,155 @@
+{
+  "name": "OpenAI with Environment Variable",
+  "description": "Flow that uses API_KEY from environment variables",
+  "data": {
+    "nodes": [
+      {
+        "id": "ChatInput-1",
+        "type": "ChatInput",
+        "position": {
+          "x": 100,
+          "y": 300
+        },
+        "data": {
+          "type": "ChatInput",
+          "node": {
+            "template": {
+              "input_value": {
+                "value": "Hello! Tell me a short joke.",
+                "type": "str"
+              },
+              "sender": {
+                "value": "User",
+                "type": "str"
+              },
+              "sender_name": {
+                "value": "User",
+                "type": "str"
+              },
+              "session_id": {
+                "value": "",
+                "type": "str"
+              },
+              "should_store_message": {
+                "value": true,
+                "type": "bool"
+              }
+            },
+            "description": "Get chat inputs from the user",
+            "display_name": "Chat Input"
+          }
+        }
+      },
+      {
+        "id": "OpenAIModel-1",
+        "type": "OpenAIModel",
+        "position": {
+          "x": 500,
+          "y": 300
+        },
+        "data": {
+          "type": "OpenAIModel",
+          "node": {
+            "template": {
+              "api_key": {
+                "value": "{{API_KEY}}",
+                "type": "str",
+                "password": true,
+                "info": "Uses API_KEY environment variable"
+              },
+              "model_name": {
+                "value": "gpt-4o-mini",
+                "type": "str",
+                "options": [
+                  "gpt-4o",
+                  "gpt-4o-mini",
+                  "gpt-4-turbo",
+                  "gpt-4",
+                  "gpt-3.5-turbo"
+                ]
+              },
+              "temperature": {
+                "value": 0.7,
+                "type": "float"
+              },
+              "max_tokens": {
+                "value": 1000,
+                "type": "int"
+              },
+              "input_value": {
+                "value": "",
+                "type": "Message"
+              },
+              "system_message": {
+                "value": "You are a helpful AI assistant.",
+                "type": "str"
+              },
+              "stream": {
+                "value": false,
+                "type": "bool"
+              }
+            },
+            "description": "OpenAI language model configured with environment variable",
+            "display_name": "OpenAI Model (with ENV)"
+          }
+        }
+      },
+      {
+        "id": "ChatOutput-1",
+        "type": "ChatOutput",
+        "position": {
+          "x": 900,
+          "y": 300
+        },
+        "data": {
+          "type": "ChatOutput",
+          "node": {
+            "template": {
+              "input_value": {
+                "value": "",
+                "type": "Message"
+              },
+              "sender": {
+                "value": "Machine",
+                "type": "str"
+              },
+              "sender_name": {
+                "value": "AI",
+                "type": "str"
+              },
+              "session_id": {
+                "value": "",
+                "type": "str"
+              },
+              "should_store_message": {
+                "value": true,
+                "type": "bool"
+              }
+            },
+            "description": "Display chat output",
+            "display_name": "Chat Output"
+          }
+        }
+      }
+    ],
+    "edges": [
+      {
+        "id": "edge-1",
+        "source": "ChatInput-1",
+        "target": "OpenAIModel-1",
+        "sourceHandle": "message",
+        "targetHandle": "input_value",
+        "type": "default"
+      },
+      {
+        "id": "edge-2",
+        "source": "OpenAIModel-1",
+        "target": "ChatOutput-1",
+        "sourceHandle": "text",
+        "targetHandle": "input_value",
+        "type": "default"
+      }
+    ]
+  },
+  "is_component": false
+}

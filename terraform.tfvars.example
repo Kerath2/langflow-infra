@@ -1,0 +1,62 @@
+ibmcloud_api_key = "TU_API_KEY_AQUI"
+
+region = "us-south"
+zone   = "us-south-1"
+
+# ID del Resource Group (opcional, si no se especifica usa el default)
+# resource_group_id = "xxxxxxxxxxxxxxxxxxxx"
+
+prefix = "langflow"
+
+tags = ["terraform", "langflow", "dev"]
+
+
+# Número de IPs en la subnet (8, 16, 32, 64, 128, 256, 512, 1024, etc.)
+subnet_ip_count = 256
+
+# CIDR permitido para SSH (usa tu IP pública para mayor seguridad)
+# Ejemplo: ssh_allowed_cidr = "203.0.113.0/24"
+ssh_allowed_cidr = "0.0.0.0/0"
+
+# CIDR permitido para acceso a Langflow
+langflow_allowed_cidr = "0.0.0.0/0"
+
+# Public Gateway (deshabilitado por defecto)
+enable_public_gateway = false
+
+# Número de VSIs a crear
+vsi_count = 2
+
+# Perfil de VSI (CPU y RAM)
+# Perfiles recomendados según instancias de Langflow:
+#   1-2 instancias: cx2-2x4  (2 vCPU, 4GB RAM)
+#   3-4 instancias: cx2-4x8  (4 vCPU, 8GB RAM)
+#   5-7 instancias: cx2-8x16 (8 vCPU, 16GB RAM)
+vsi_profile = "cx2-4x8"
+
+# Sistema operativo
+os_image_name = "ibm-ubuntu-22-04-3-minimal-amd64-1"
+
+# Tu clave pública SSH (contenido del archivo ~/.ssh/id_rsa.pub)
+ssh_public_key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQ..."
+
+# API Key para Langflow (OpenAI, Anthropic, Google, etc.)
+# Esta clave se configurará automáticamente como variable global en Langflow
+# Podrás usarla en tus flows con: {{API_KEY}}
+api_key = "sk-proj-tu-api-key-aqui"
+
+# Ruta al template de cloud-init
+cloud_init_template_path = "cloud-init.yaml.tpl"
+
+# Crear Floating IPs para acceso público
+enable_floating_ips = true
+
+# Habilitar Langflow
+langflow_enabled = true
+
+# Número de instancias de Langflow por VSI
+# Ejemplo: 2 VSIs × 3 instancias = 6 instancias totales de Langflow
+langflow_instances_per_vsi = 3
+
+# Puerto base para Langflow (se incrementará automáticamente: 7861, 7862, 7863...)
+langflow_base_port = 7861

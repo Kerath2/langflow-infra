@@ -1,0 +1,73 @@
+# Terraform files
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!terraform.tfvars.example
+!environments/*/terraform.tfvars
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraform.lock.hcl
+tfplan
+*.tfplan
+
+# OS files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Sensitive data
+*.pem
+*.key
+*.cer
+*.crt
+id_rsa*
+
+# Logs
+*.log
+
+# Backup files
+*.bak
+*.backup
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+venv/
+env/
+
+# Node
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Environments
+environments
+
+# Make
+Makefile
+
+# Scripts de prueba local (no necesarios para producción en Schematics)
+local-setup.sh
+deploy-with-api-key.sh
+create-api-variable.sh
+setup-langflow-flow.sh
+
+# Credentials y datos sensibles del proyecto
+postgres-credentials.txt
+.env
+.env.*
+
+# Documentación de desarrollo local
+CAMBIOS.md
+QUICK-START.md
