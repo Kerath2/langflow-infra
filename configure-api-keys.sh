@@ -3,17 +3,24 @@ set -e
 
 INSTANCES=__INSTANCES__
 LANGFLOW_BASE_PORT=__LANGFLOW_BASE_PORT__
+POSTGRES_BASE_PORT=__POSTGRES_BASE_PORT__
 API_KEY="__API_KEY__"
 
-echo "=== Configurando variables API_KEY en Langflow ===" | tee -a /var/log/api-key-setup.log
+echo "=== Configurando variables en Langflow ===" | tee -a /var/log/api-key-setup.log
+
+# Obtener IP pública de la VSI
+echo "Obteniendo IP pública..." | tee -a /var/log/api-key-setup.log
+PUBLIC_IP=$(curl -s ifconfig.me || curl -s icanhazip.com || echo "127.0.0.1")
+echo "IP pública detectada: $PUBLIC_IP" | tee -a /var/log/api-key-setup.log
 
 # Esperar a que las instancias de Langflow estén listas
 echo "Esperando 30 segundos para que Langflow inicie completamente..." | tee -a /var/log/api-key-setup.log
 sleep 30
 
-# Configurar API_KEY en cada instancia de Langflow
+# Configurar variables en cada instancia de Langflow
 for i in $(seq 1 $INSTANCES); do
   LANGFLOW_PORT=$((LANGFLOW_BASE_PORT + i - 1))
+  POSTGRES_PORT=$((POSTGRES_BASE_PORT + i - 1))
 
   echo "Configurando API_KEY en Langflow instancia $i (puerto $LANGFLOW_PORT)..." | tee -a /var/log/api-key-setup.log
 
@@ -46,6 +53,7 @@ for i in $(seq 1 $INSTANCES); do
   fi
 
   # Crear la variable global API_KEY
+  echo "  → Creando variable API_KEY..." | tee -a /var/log/api-key-setup.log
   VARIABLE_RESPONSE=$(curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST "http://127.0.0.1:${LANGFLOW_PORT}/api/v1/variables/" \
     -H "Content-Type: application/json" \
     -H "Authorization: Bearer $TOKEN" \
@@ -58,8 +66,27 @@ for i in $(seq 1 $INSTANCES); do
   elif [ "$HTTP_STATUS" = "409" ]; then
     echo "  ⚠ Variable API_KEY ya existe en instancia $i" | tee -a /var/log/api-key-setup.log
   else
-    echo "  ✗ Error al crear variable en instancia $i (HTTP $HTTP_STATUS)" | tee -a /var/log/api-key-setup.log
+    echo "  ✗ Error al crear variable API_KEY en instancia $i (HTTP $HTTP_STATUS)" | tee -a /var/log/api-key-setup.log
+  fi
+
+  # Crear la variable global bd_url (URL de conexión a PostgreSQL con schema CRM)
+  BD_URL="postgresql://langflow:passw0rd@${PUBLIC_IP}:${POSTGRES_PORT}/langflow_db?options=-csearch_path=crm"
+  echo "  → Creando variable bd_url: $BD_URL" | tee -a /var/log/api-key-setup.log
+
+  BD_URL_RESPONSE=$(curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST "http://127.0.0.1:${LANGFLOW_PORT}/api/v1/variables/" \
+    -H "Content-Type: application/json" \
+    -H "Authorization: Bearer $TOKEN" \
+    -d "{\"name\":\"bd_url\",\"value\":\"$BD_URL\",\"type\":\"Generic\"}" 2>/dev/null || echo "")
+
+  BD_URL_HTTP_STATUS=$(echo "$BD_URL_RESPONSE" | grep "HTTP_STATUS:" | cut -d: -f2)
+
+  if [ "$BD_URL_HTTP_STATUS" = "200" ] || [ "$BD_URL_HTTP_STATUS" = "201" ]; then
+    echo "  ✓ Variable bd_url creada en Langflow instancia $i" | tee -a /var/log/api-key-setup.log
+  elif [ "$BD_URL_HTTP_STATUS" = "409" ]; then
+    echo "  ⚠ Variable bd_url ya existe en instancia $i" | tee -a /var/log/api-key-setup.log
+  else
+    echo "  ✗ Error al crear variable bd_url en instancia $i (HTTP $BD_URL_HTTP_STATUS)" | tee -a /var/log/api-key-setup.log
   fi
 done
 
-echo "=== Configuración de API_KEY completada ===" | tee -a /var/log/api-key-setup.log
+echo "=== Configuración de variables completada ===" | tee -a /var/log/api-key-setup.log

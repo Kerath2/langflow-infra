@@ -93,7 +93,7 @@ write_files:
 
         # Crear la tabla crm_data en el esquema crm
         echo "  → Creando tabla crm.crm_data..." | tee -a /var/log/crm-setup.log
-        podman exec $POSTGRES_CONTAINER psql -U langflow -d langflow_db -c "CREATE TABLE IF NOT EXISTS crm.crm_data (id SERIAL PRIMARY KEY, nombre_completo TEXT NOT NULL, numero_documento BIGINT NOT NULL, edad INTEGER NOT NULL, estado_laboral TEXT NOT NULL, ingreso_mensual INTEGER NOT NULL, egresos_mensuales INTEGER NOT NULL, tarjeta_de_credito_bronce BOOLEAN NOT NULL, tarjeta_de_credito_plata BOOLEAN NOT NULL, tarjeta_de_credito_oro BOOLEAN NOT NULL, cuenta_ahorros BOOLEAN NOT NULL, seguro_mascotas BOOLEAN NOT NULL, seguro_desempleo BOOLEAN NOT NULL, complemento_medico BOOLEAN NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);"
+        podman exec $POSTGRES_CONTAINER psql -U langflow -d langflow_db -c "CREATE TABLE IF NOT EXISTS crm.crm_data (id SERIAL PRIMARY KEY, nombre_completo TEXT NOT NULL, numero_documento BIGINT NOT NULL, edad INTEGER NOT NULL, estado_laboral TEXT NOT NULL, ingreso_mensual INTEGER NOT NULL, egresos_mensuales INTEGER NOT NULL, tarjeta_de_credito_bronce BOOLEAN NOT NULL, tarjeta_de_credito_plata BOOLEAN NOT NULL, tarjeta_de_credito_oro BOOLEAN NOT NULL, cuenta_ahorros BOOLEAN NOT NULL, seguro_mascotas BOOLEAN NOT NULL, seguro_desempleo BOOLEAN NOT NULL, complemento_medico BOOLEAN NOT NULL);"
         podman exec $POSTGRES_CONTAINER psql -U langflow -d langflow_db -c "CREATE INDEX IF NOT EXISTS idx_crm_numero_documento ON crm.crm_data(numero_documento);"
         podman exec $POSTGRES_CONTAINER psql -U langflow -d langflow_db -c "CREATE INDEX IF NOT EXISTS idx_crm_estado_laboral ON crm.crm_data(estado_laboral);"
         podman exec $POSTGRES_CONTAINER psql -U langflow -d langflow_db -c "CREATE INDEX IF NOT EXISTS idx_crm_ingreso ON crm.crm_data(ingreso_mensual);"
@@ -272,13 +272,13 @@ runcmd:
   - curl -fsSL https://raw.githubusercontent.com/Kerath2/langflow-infra/main/configure-api-keys.sh -o /root/configure-api-keys.sh.tpl
 
   # Procesar template con valores reales
-  - sed -e 's/__INSTANCES__/${langflow_instances}/g' -e 's/__LANGFLOW_BASE_PORT__/${langflow_base_port}/g' -e 's/__API_KEY__/${api_key}/g' /root/configure-api-keys.sh.tpl > /root/configure-api-keys.sh
+  - sed -e 's/__INSTANCES__/${langflow_instances}/g' -e 's/__LANGFLOW_BASE_PORT__/${langflow_base_port}/g' -e 's/__POSTGRES_BASE_PORT__/${postgres_base_port}/g' -e 's/__API_KEY__/${api_key}/g' /root/configure-api-keys.sh.tpl > /root/configure-api-keys.sh
   - chmod +x /root/configure-api-keys.sh
 
-  # Configurar variables API_KEY en Langflow (ejecutar en background)
+  # Configurar variables API_KEY y bd_url en Langflow (ejecutar en background)
   - nohup /root/configure-api-keys.sh > /var/log/api-key-setup.log 2>&1 &
 
   # Configurar systemd para auto-inicio de contenedores (opcional)
   - systemctl enable podman-restart.service || true
 
-final_message: "Sistema aprovisionado correctamente. ${langflow_instances} instancias de Postgres y ${langflow_instances} instancias de Langflow están ejecutándose. La configuración de API_KEY y tabla CRM se completará en 1-2 minutos (ver /var/log/api-key-setup.log y /var/log/crm-setup.log)."
+final_message: "Sistema aprovisionado correctamente. ${langflow_instances} instancias de Postgres y ${langflow_instances} instancias de Langflow están ejecutándose. La configuración de variables (API_KEY, bd_url) y tabla CRM se completará en 1-2 minutos (ver /var/log/api-key-setup.log y /var/log/crm-setup.log)."
