@@ -57,7 +57,7 @@ for i in $(seq 1 $INSTANCES); do
   VARIABLE_RESPONSE=$(curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST "http://127.0.0.1:${LANGFLOW_PORT}/api/v1/variables/" \
     -H "Content-Type: application/json" \
     -H "Authorization: Bearer $TOKEN" \
-    -d "{\"name\":\"API_KEY\",\"value\":\"$API_KEY\",\"type\":\"Credential\",\"default_fields\":[\"OpenAI API Key\",\"Anthropic API Key\",\"Google API Key\"]}" 2>/dev/null || echo "")
+    -d "{\"name\":\"API_KEY\",\"value\":\"$API_KEY\",\"type\":\"Credential\"}" 2>/dev/null || echo "")
 
   HTTP_STATUS=$(echo "$VARIABLE_RESPONSE" | grep "HTTP_STATUS:" | cut -d: -f2)
 
@@ -69,23 +69,23 @@ for i in $(seq 1 $INSTANCES); do
     echo "  ✗ Error al crear variable API_KEY en instancia $i (HTTP $HTTP_STATUS)" | tee -a /var/log/api-key-setup.log
   fi
 
-  # Crear la variable global bd_url (URL de conexión a PostgreSQL con schema CRM)
-  BD_URL="postgresql://langflow:passw0rd@${PUBLIC_IP}:${POSTGRES_PORT}/langflow_db?options=-csearch_path=crm"
-  echo "  → Creando variable bd_url: $BD_URL" | tee -a /var/log/api-key-setup.log
+  # Crear la variable global DB_URI (URL de conexión a PostgreSQL con schema CRM)
+  DB_URI="postgresql://langflow:passw0rd@${PUBLIC_IP}:${POSTGRES_PORT}/langflow_db?options=-csearch_path=crm"
+  echo "  → Creando variable DB_URI: $DB_URI" | tee -a /var/log/api-key-setup.log
 
-  BD_URL_RESPONSE=$(curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST "http://127.0.0.1:${LANGFLOW_PORT}/api/v1/variables/" \
+  DB_URI_RESPONSE=$(curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST "http://127.0.0.1:${LANGFLOW_PORT}/api/v1/variables/" \
     -H "Content-Type: application/json" \
     -H "Authorization: Bearer $TOKEN" \
-    -d "{\"name\":\"bd_url\",\"value\":\"$BD_URL\",\"type\":\"Generic\"}" 2>/dev/null || echo "")
+    -d "{\"name\":\"DB_URI\",\"value\":\"$DB_URI\",\"type\":\"Generic\"}" 2>/dev/null || echo "")
 
-  BD_URL_HTTP_STATUS=$(echo "$BD_URL_RESPONSE" | grep "HTTP_STATUS:" | cut -d: -f2)
+  DB_URI_HTTP_STATUS=$(echo "$DB_URI_RESPONSE" | grep "HTTP_STATUS:" | cut -d: -f2)
 
-  if [ "$BD_URL_HTTP_STATUS" = "200" ] || [ "$BD_URL_HTTP_STATUS" = "201" ]; then
-    echo "  ✓ Variable bd_url creada en Langflow instancia $i" | tee -a /var/log/api-key-setup.log
-  elif [ "$BD_URL_HTTP_STATUS" = "409" ]; then
-    echo "  ⚠ Variable bd_url ya existe en instancia $i" | tee -a /var/log/api-key-setup.log
+  if [ "$DB_URI_HTTP_STATUS" = "200" ] || [ "$DB_URI_HTTP_STATUS" = "201" ]; then
+    echo "  ✓ Variable DB_URI creada en Langflow instancia $i" | tee -a /var/log/api-key-setup.log
+  elif [ "$DB_URI_HTTP_STATUS" = "409" ]; then
+    echo "  ⚠ Variable DB_URI ya existe en instancia $i" | tee -a /var/log/api-key-setup.log
   else
-    echo "  ✗ Error al crear variable bd_url en instancia $i (HTTP $BD_URL_HTTP_STATUS)" | tee -a /var/log/api-key-setup.log
+    echo "  ✗ Error al crear variable DB_URI en instancia $i (HTTP $DB_URI_HTTP_STATUS)" | tee -a /var/log/api-key-setup.log
   fi
 done
 
