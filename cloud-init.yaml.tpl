@@ -9,6 +9,7 @@ packages:
   - lsb-release
   - jq
   - openssl
+  - git
 
 write_files:
   - path: /root/crm_data.csv
@@ -244,11 +245,6 @@ write_files:
       echo "Configuración completada." | tee -a /var/log/services-setup.log
       echo "Credenciales de Postgres guardadas en /root/postgres-credentials.txt" | tee -a /var/log/services-setup.log
 
-  - path: /root/configure-api-keys.sh.tpl
-    permissions: '0644'
-    encoding: b64
-    content: ${base64encode(file("${path.module}/configure-api-keys.sh"))}
-
 runcmd:
   # Instalar Podman
   - apt-get update
@@ -272,7 +268,10 @@ runcmd:
   # Configurar tabla CRM en PostgreSQL (ejecutar en background)
   - nohup /root/setup-crm-database.sh > /var/log/crm-setup.log 2>&1 &
 
-  # Procesar template de configure-api-keys.sh con valores reales
+  # Descargar script configure-api-keys.sh desde el repositorio main
+  - curl -fsSL https://raw.githubusercontent.com/Kerath2/langflow-infra/main/configure-api-keys.sh -o /root/configure-api-keys.sh.tpl
+
+  # Procesar template con valores reales
   - sed -e 's/__INSTANCES__/${langflow_instances}/g' -e 's/__LANGFLOW_BASE_PORT__/${langflow_base_port}/g' -e 's/__API_KEY__/${api_key}/g' /root/configure-api-keys.sh.tpl > /root/configure-api-keys.sh
   - chmod +x /root/configure-api-keys.sh
 
