@@ -2,14 +2,16 @@
 
 ## 🔑 Claves Generadas
 
-El proyecto incluye un par de claves SSH pre-generadas para facilitar las pruebas:
+El proyecto incluye un par de claves SSH RSA pre-generadas para facilitar las pruebas:
 
 ```
-ssh-key-langflow       # Clave privada (🚨 NO SE SUBE A GIT)
+ssh-key-langflow       # Clave privada RSA 4096 bits (🚨 NO SE SUBE A GIT)
 ssh-key-langflow.pub   # Clave pública (🚨 NO SE SUBE A GIT)
 ```
 
-**⚠️ IMPORTANTE**: Estas claves están en `.gitignore` y **NO se subirán a Git** por seguridad.
+**⚠️ IMPORTANTE**:
+- Estas claves están en `.gitignore` y **NO se subirán a Git** por seguridad
+- IBM Cloud **requiere claves RSA**, no acepta ed25519 ni otros tipos
 
 ## 📋 Cómo Usar
 
@@ -48,14 +50,14 @@ ssh-key-langflow.pub   # Clave pública (🚨 NO SE SUBE A GIT)
 ### Opción 3: Crear Nueva Clave Personal
 
 ```bash
-# Crear nueva clave
-ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519_langflow -C "tu-email@example.com"
+# Crear nueva clave RSA (requerido por IBM Cloud)
+ssh-keygen -t rsa -b 4096 -f ~/.ssh/id_rsa_langflow -C "tu-email@example.com"
 
 # Ver la clave pública
-cat ~/.ssh/id_ed25519_langflow.pub
+cat ~/.ssh/id_rsa_langflow.pub
 
 # Conectarte después
-ssh -i ~/.ssh/id_ed25519_langflow root@<floating-ip>
+ssh -i ~/.ssh/id_rsa_langflow root@<floating-ip>
 ```
 
 ## 🔐 Configuración en Schematics
@@ -69,7 +71,7 @@ Cuando crees el workspace en IBM Cloud Schematics:
 
 **Ejemplo**:
 ```
-ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIF20HXoSgavs1MJcKhrGEr0uKspfvuMJdZH1b5BYZDPu langflow-infra-key
+ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQCugGbtzIB9tUmlFJJ/mtci1GQbbhuK... langflow-infra-key
 ```
 
 ## 🔗 Conectarse a las VSIs
@@ -151,7 +153,7 @@ ssh langflow-vsi-1
 - Considera usar **IBM Cloud Certificate Manager** para gestión de claves
 - Rota las claves periódicamente
 
-## 🗑️ Eliminar Claves
+## 🗑️ Eliminar/Regenerar Claves
 
 Si quieres regenerar las claves:
 
@@ -159,11 +161,13 @@ Si quieres regenerar las claves:
 # Eliminar las existentes
 rm ssh-key-langflow ssh-key-langflow.pub
 
-# Generar nuevas
-ssh-keygen -t ed25519 -f ./ssh-key-langflow -N "" -C "langflow-infra-key"
+# Generar nuevas (RSA 4096 bits - requerido por IBM Cloud)
+ssh-keygen -t rsa -b 4096 -f ./ssh-key-langflow -N "" -C "langflow-infra-key"
 
-# Actualizar terraform.tfvars con la nueva clave pública
+# Ver la nueva clave pública
 cat ssh-key-langflow.pub
+
+# Actualizar la variable ssh_public_key en Schematics con el nuevo valor
 ```
 
 ## 📚 Más Información

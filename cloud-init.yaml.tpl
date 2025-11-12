@@ -161,7 +161,7 @@ write_files:
         fi
 
         # Crear la variable global API_KEY
-        VARIABLE_RESPONSE=$$(curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST "http://localhost:$${LANGFLOW_PORT}/api/v1/variables/" \
+        VARIABLE_RESPONSE=$$(curl -s -w "\nHTTP_STATUS:%%{http_code}" -X POST "http://localhost:$${LANGFLOW_PORT}/api/v1/variables/" \
           -H "Content-Type: application/json" \
           -H "Authorization: Bearer $$TOKEN" \
           -d "{\"name\":\"API_KEY\",\"value\":\"$$API_KEY\",\"type\":\"Credential\",\"default_fields\":[\"OpenAI API Key\",\"Anthropic API Key\",\"Google API Key\"]}" 2>/dev/null || echo "")

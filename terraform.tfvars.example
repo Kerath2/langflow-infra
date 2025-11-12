@@ -29,19 +29,19 @@ vsi_count = 2
 
 # Perfil de VSI (CPU y RAM)
 # Perfiles recomendados según instancias de Langflow:
-#   1-2 instancias: cx2-2x4  (2 vCPU, 4GB RAM)
-#   3-4 instancias: cx2-4x8  (4 vCPU, 8GB RAM)
-#   5-7 instancias: cx2-8x16 (8 vCPU, 16GB RAM)
+#   1-2 instancias: cx2-2x4  (2 vCPU, 4GB RAM)  ~$65/mes por VSI
+#   3-4 instancias: cx2-4x8  (4 vCPU, 8GB RAM)  ~$130/mes por VSI
+#   5-7 instancias: cx2-8x16 (8 vCPU, 16GB RAM) ~$260/mes por VSI
 vsi_profile = "cx2-4x8"
 
 # Sistema operativo
 os_image_name = "ibm-ubuntu-22-04-3-minimal-amd64-1"
 
-# Tu clave pública SSH
+# Tu clave pública SSH (debe ser RSA para IBM Cloud)
 # Opción 1: Usa la clave del proyecto (ssh-key-langflow.pub)
 # Ejecuta: cat ssh-key-langflow.pub
 # Opción 2: Usa tu propia clave (recomendado): cat ~/.ssh/id_rsa.pub
-ssh_public_key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIF20HXoSgavs1MJcKhrGEr0uKspfvuMJdZH1b5BYZDPu langflow-infra-key"
+ssh_public_key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQCugGbtzIB9tUmlFJJ/mtci1GQbbhuKPqR+V1x1h4mNe2aqFa+bE+DRm+s8VeXVil2axzPwOQ30CbEriV+YMp6eUxHuJUV4LIG9w73x9fpCkkmMgpbotqXni73pzDM2ve1y9b8faxVHNfHJEPOwNuD0AySs+/MDqMUcm2NM3xh/xkHYTdkQwourKgkkpurnRdVLIR5TExy3YP4h3S+zQ98OeJ54PeWwde2Qjgu4xR3WuBfuaMtlnfpCaeZL7EtXI4+2qN3hvg9dqkaFR9lHRINY9HmRaS2VpC1hPkJji7MwbHQ/EjdnokYhS7CKh+GJERYdKz2clohRL9MyyDuZ2rhkrAunV3AUQXnTEKlw5/03G2ETqqQlCnNqwoANhTmVq11nufI5F1N1pPmwWfoqJpAOulJjWB/nZ6ldSYMNbXSnx7PrFLIvMnqF8fo7KMUK6cmCLPMpfEF0NI9ljJ5oSN6HbzGMU9JnNSQVBmylqaThfOA13/MiTotbbYuo3WKyevnTXZvRqNVWslom0jtkGtqb3bNitFUIPx0uUvKqOfXKV/fvN9lxLSy0aZ0IToUBQhDRdXCF7RiB4Eelmp/3+YQz1hQ+y7rRvbwOuzP4LV9iqAp0fRAgEUCgzoab7pjHUjWP1Xs/NyMbqNAzIiPsPJ6qqtRcDmaLqZWCC37brnFtsQ== langflow-infra-key"
 
 # API Key para Langflow (OpenAI, Anthropic, Google, etc.)
 # Esta clave se configurará automáticamente como variable global en Langflow
