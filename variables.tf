@@ -77,9 +77,9 @@ variable "vsi_count" {
 }
 
 variable "vsi_profile" {
-  description = "Perfil de la VSI (determina CPU y RAM). cx2-2x8 = 2 vCPU, 8GB RAM"
+  description = "Perfil de la VSI (determina CPU y RAM). bx2-2x8 = 2 vCPU, 8GB RAM"
   type        = string
-  default     = "cx2-2x8"
+  default     = "bx2-2x8"
 }
 
 variable "os_image_name" {
