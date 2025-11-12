@@ -25,15 +25,14 @@ langflow_allowed_cidr = "0.0.0.0/0"
 enable_public_gateway = false
 
 # Número de VSIs a crear
-# 1 VSI = Setup simple para múltiples usuarios (~$65/mes)
-# 2+ VSIs = Alta disponibilidad o equipos grandes
-vsi_count = 1
+# Cada VSI = 1 Langflow + 1 PostgreSQL (múltiples usuarios en paralelo)
+# Para escalar: solo cambia este número (ej. 2 → 10 VSIs)
+# Costo por VSI (cx2-2x4): ~$65/mes
+vsi_count = 2
 
 # Perfil de VSI (CPU y RAM)
-# Perfiles recomendados según instancias de Langflow:
-#   1 instancia:  cx2-2x4  (2 vCPU, 4GB RAM)  ~$65/mes por VSI - RECOMENDADO para empezar
-#   2-3 instancias: cx2-4x8  (4 vCPU, 8GB RAM)  ~$130/mes por VSI
-#   4-7 instancias: cx2-8x16 (8 vCPU, 16GB RAM) ~$260/mes por VSI
+# Recomendado: cx2-2x4 (2 vCPU, 4GB RAM) ~$65/mes por VSI
+# Para más carga: cx2-4x8 (4 vCPU, 8GB RAM) ~$130/mes por VSI
 vsi_profile = "cx2-2x4"
 
 # Sistema operativo

@@ -4,14 +4,18 @@ Infraestructura como código (IaC) con Terraform para desplegar múltiples insta
 
 ## 🎯 ¿Qué Hace Este Proyecto?
 
-Despliega automáticamente:
+Despliega automáticamente una arquitectura **escalable horizontalmente**:
 - ✅ VPC con subnet y security groups
-- ✅ 1 máquina virtual (VSI) en IBM Cloud (configurable a más)
-- ✅ 1 PostgreSQL (contenedor Podman)
-- ✅ 1 Langflow (contenedor Podman) - **soporta múltiples usuarios simultáneos**
-- ✅ Variable global `API_KEY` pre-configurada en Langflow
-- ✅ IP pública para acceso
-- ✅ Costo: ~$65/mes (cx2-2x4: 2 vCPU, 4GB RAM)
+- ✅ **N máquinas virtuales (VSIs)** en IBM Cloud - configurable de 1 a 100
+- ✅ **Cada VSI incluye:**
+  - 1 PostgreSQL (contenedor Podman)
+  - 1 Langflow (contenedor Podman) - **múltiples usuarios en paralelo**
+  - Variable global `API_KEY` pre-configurada
+  - IP pública para acceso
+- ✅ **Escalamiento fácil:** Cambia `vsi_count = 2` a `vsi_count = 10` y listo
+- ✅ **Costo:** ~$65/mes por VSI (cx2-2x4: 2 vCPU, 4GB RAM)
+  - 2 VSIs = ~$130/mes
+  - 10 VSIs = ~$650/mes
 
 ## 🚀 Deploy Rápido con IBM Cloud Schematics
 
@@ -47,9 +51,9 @@ git push -u origin main
 
 Variables opcionales (tienen defaults):
 - `region` = "us-south"
-- `vsi_count` = 1 (1 VSI para múltiples usuarios)
-- `vsi_profile` = "cx2-2x4" (2 vCPU, 4GB RAM - ~$65/mes)
-- `langflow_instances_per_vsi` = 1 (soporta múltiples usuarios)
+- `vsi_count` = 2 (para escalar a 10: solo cambia a 10)
+- `vsi_profile` = "cx2-2x4" (2 vCPU, 4GB RAM - ~$65/mes por VSI)
+- `langflow_instances_per_vsi` = 1 (cada Langflow soporta múltiples usuarios)
 
 ### Paso 4: Deploy
 
@@ -60,18 +64,33 @@ Variables opcionales (tienen defaults):
 
 ### Paso 5: Accede a Langflow
 
-Ve a la pestaña **"Outputs"** en Schematics para ver la URL de Langflow.
+Ve a la pestaña **"Outputs"** en Schematics para ver todas las URLs de Langflow.
 
-**Ejemplo**:
+**Ejemplo con 2 VSIs:**
 ```
-http://169.48.123.45:7861  # Una sola instancia para múltiples usuarios
+http://52.118.151.6:7861   # VSI-1 - Langflow (múltiples usuarios)
+http://52.118.151.7:7861   # VSI-2 - Langflow (múltiples usuarios)
+```
+
+**Ejemplo con 10 VSIs:**
+```
+http://52.118.151.6:7861   # VSI-1
+http://52.118.151.7:7861   # VSI-2
+http://52.118.151.8:7861   # VSI-3
+...
+http://52.118.151.15:7861  # VSI-10
 ```
 
 ⏱️ **Espera 3-5 minutos adicionales** después del apply para que cloud-init complete la instalación.
 
-**💡 Múltiples usuarios pueden usar la misma instancia simultáneamente.**
+**💡 Cada Langflow soporta múltiples usuarios conectándose simultáneamente al mismo puerto.**
 
-Para escalar (más VSIs o instancias), ver [SIMPLIFICAR-A-1-INSTANCIA.md](SIMPLIFICAR-A-1-INSTANCIA.md).
+### 📈 Escalar Fácilmente
+
+Para agregar más VSIs (ej. de 2 a 10):
+1. **Settings** → Variables → Cambia `vsi_count` de `2` a `10`
+2. **Generate plan** → **Apply plan**
+3. Listo, tendrás 10 Langflow independientes.
 
 ## 📖 Documentación Completa
 

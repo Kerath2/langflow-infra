@@ -67,9 +67,9 @@ variable "enable_public_gateway" {
 
 # Compute Configuration
 variable "vsi_count" {
-  description = "Número de VSIs a crear (1 VSI soporta múltiples usuarios)"
+  description = "Número de VSIs a crear. Cada VSI = 1 Langflow + 1 PostgreSQL. Para escalar: aumenta este número."
   type        = number
-  default     = 1
+  default     = 2
   validation {
     condition     = var.vsi_count > 0 && var.vsi_count <= 100
     error_message = "El número de VSIs debe estar entre 1 y 100."
