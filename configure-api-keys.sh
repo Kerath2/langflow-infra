@@ -22,7 +22,7 @@ for i in $(seq 1 $INSTANCES); do
   LANGFLOW_PORT=$((LANGFLOW_BASE_PORT + i - 1))
   POSTGRES_PORT=$((POSTGRES_BASE_PORT + i - 1))
 
-  echo "Configurando API_KEY en Langflow instancia $i (puerto $LANGFLOW_PORT)..." | tee -a /var/log/api-key-setup.log
+  echo "Configurando variables en Langflow instancia $i (puerto $LANGFLOW_PORT)..." | tee -a /var/log/api-key-setup.log
 
   # Intentar obtener token y crear variable (con reintentos)
   MAX_RETRIES=10
@@ -52,21 +52,30 @@ for i in $(seq 1 $INSTANCES); do
     continue
   fi
 
-  # Crear la variable global API_KEY
-  echo "  → Creando variable API_KEY..." | tee -a /var/log/api-key-setup.log
-  VARIABLE_RESPONSE=$(curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST "http://127.0.0.1:${LANGFLOW_PORT}/api/v1/variables/" \
-    -H "Content-Type: application/json" \
-    -H "Authorization: Bearer $TOKEN" \
-    -d "{\"name\":\"API_KEY\",\"value\":\"$API_KEY\",\"type\":\"Credential\",\"default_fields\":[]}" 2>/dev/null || echo "")
+  # Obtener ID de la variable OPENAI_API_KEY existente
+  echo "  → Buscando variable OPENAI_API_KEY..." | tee -a /var/log/api-key-setup.log
+  VARIABLES_LIST=$(curl -s -X GET "http://127.0.0.1:${LANGFLOW_PORT}/api/v1/variables/" \
+    -H "Authorization: Bearer $TOKEN" 2>/dev/null || echo "")
 
-  HTTP_STATUS=$(echo "$VARIABLE_RESPONSE" | grep "HTTP_STATUS:" | cut -d: -f2)
+  OPENAI_VAR_ID=$(echo "$VARIABLES_LIST" | grep -o '"id":"[^"]*","name":"OPENAI_API_KEY"' | grep -o '"id":"[^"]*' | cut -d'"' -f4)
 
-  if [ "$HTTP_STATUS" = "200" ] || [ "$HTTP_STATUS" = "201" ]; then
-    echo "  ✓ Variable API_KEY creada en Langflow instancia $i" | tee -a /var/log/api-key-setup.log
-  elif [ "$HTTP_STATUS" = "409" ]; then
-    echo "  ⚠ Variable API_KEY ya existe en instancia $i" | tee -a /var/log/api-key-setup.log
+  if [ -n "$OPENAI_VAR_ID" ]; then
+    echo "  → Actualizando OPENAI_API_KEY (ID: $OPENAI_VAR_ID)..." | tee -a /var/log/api-key-setup.log
+
+    UPDATE_RESPONSE=$(curl -s -w "\nHTTP_STATUS:%{http_code}" -X PATCH "http://127.0.0.1:${LANGFLOW_PORT}/api/v1/variables/$OPENAI_VAR_ID" \
+      -H "Content-Type: application/json" \
+      -H "Authorization: Bearer $TOKEN" \
+      -d "{\"id\":\"$OPENAI_VAR_ID\",\"name\":\"OPENAI_API_KEY\",\"value\":\"$API_KEY\",\"default_fields\":[]}" 2>/dev/null || echo "")
+
+    HTTP_STATUS=$(echo "$UPDATE_RESPONSE" | grep "HTTP_STATUS:" | cut -d: -f2)
+
+    if [ "$HTTP_STATUS" = "200" ] || [ "$HTTP_STATUS" = "201" ]; then
+      echo "  ✓ OPENAI_API_KEY actualizada en Langflow instancia $i" | tee -a /var/log/api-key-setup.log
+    else
+      echo "  ✗ Error al actualizar OPENAI_API_KEY en instancia $i (HTTP $HTTP_STATUS)" | tee -a /var/log/api-key-setup.log
+    fi
   else
-    echo "  ✗ Error al crear variable API_KEY en instancia $i (HTTP $HTTP_STATUS)" | tee -a /var/log/api-key-setup.log
+    echo "  ⚠ Variable OPENAI_API_KEY no encontrada en instancia $i" | tee -a /var/log/api-key-setup.log
   fi
 
   # Crear la variable global DB_URI (URL de conexión a PostgreSQL con schema CRM)
