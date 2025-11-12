@@ -284,10 +284,9 @@ write_files:
             fi
           fi
 
-          CURRENT_TRY=$$((RETRY_COUNT + 1))
-          echo "  ⚠ Esperando a que Langflow instancia $i esté listo (intento $$CURRENT_TRY/$$MAX_RETRIES)..." | tee -a /var/log/api-key-setup.log
+          echo "  ⚠ Esperando a que Langflow instancia $i esté listo (intento $$(($$RETRY_COUNT + 1))/$$MAX_RETRIES)..." | tee -a /var/log/api-key-setup.log
           sleep 5
-          RETRY_COUNT=$$((RETRY_COUNT + 1))
+          RETRY_COUNT=$$(($$RETRY_COUNT + 1))
         done
 
         if [ -z "$$TOKEN" ]; then
