@@ -275,10 +275,20 @@ runcmd:
   - sed -e 's/__INSTANCES__/${langflow_instances}/g' -e 's/__LANGFLOW_BASE_PORT__/${langflow_base_port}/g' -e 's/__POSTGRES_BASE_PORT__/${postgres_base_port}/g' -e 's/__API_KEY__/${api_key}/g' /root/configure-api-keys.sh.tpl > /root/configure-api-keys.sh
   - chmod +x /root/configure-api-keys.sh
 
-  # Configurar variables API_KEY y bd_url en Langflow (ejecutar en background)
+  # Configurar variables API_KEY y DB_URI en Langflow (ejecutar en background)
   - nohup /root/configure-api-keys.sh > /var/log/api-key-setup.log 2>&1 &
+
+  # Descargar script upload-files-to-langflow.sh desde el repositorio main
+  - curl -fsSL https://raw.githubusercontent.com/Kerath2/langflow-infra/main/upload-files-to-langflow.sh -o /root/upload-files-to-langflow.sh.tpl
+
+  # Procesar template con valores reales
+  - sed -e 's/__INSTANCES__/${langflow_instances}/g' -e 's/__LANGFLOW_BASE_PORT__/${langflow_base_port}/g' /root/upload-files-to-langflow.sh.tpl > /root/upload-files-to-langflow.sh
+  - chmod +x /root/upload-files-to-langflow.sh
+
+  # Subir archivos .docx a Langflow (ejecutar en background)
+  - nohup /root/upload-files-to-langflow.sh > /var/log/file-upload.log 2>&1 &
 
   # Configurar systemd para auto-inicio de contenedores (opcional)
   - systemctl enable podman-restart.service || true
 
-final_message: "Sistema aprovisionado correctamente. ${langflow_instances} instancias de Postgres y ${langflow_instances} instancias de Langflow están ejecutándose. La configuración de variables (API_KEY, bd_url) y tabla CRM se completará en 1-2 minutos (ver /var/log/api-key-setup.log y /var/log/crm-setup.log)."
+final_message: "Sistema aprovisionado correctamente. ${langflow_instances} instancias de Postgres y ${langflow_instances} instancias de Langflow están ejecutándose. La configuración de variables (API_KEY, DB_URI), tabla CRM y archivos .docx se completará en 2-3 minutos (ver logs en /var/log/)."
