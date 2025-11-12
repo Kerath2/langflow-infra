@@ -46,10 +46,11 @@ write_files:
         echo "Iniciando Postgres: $POSTGRES_CONTAINER en puerto $POSTGRES_PORT" | tee -a /var/log/services-setup.log
         podman run -d \
           --name $POSTGRES_CONTAINER \
-          -p $POSTGRES_PORT:5432 \
+          --network host \
           -e POSTGRES_USER=$POSTGRES_USER \
           -e POSTGRES_PASSWORD=$POSTGRES_PASSWORD \
           -e POSTGRES_DB=$POSTGRES_DB \
+          -e PGPORT=$POSTGRES_PORT \
           -v $POSTGRES_VOLUME:/var/lib/postgresql/data:Z \
           --restart unless-stopped \
           docker.io/library/postgres:16
@@ -61,7 +62,7 @@ write_files:
         fi
 
         # Guardar credenciales
-        echo "Postgres $i - Host: localhost:$POSTGRES_PORT, User: $POSTGRES_USER, DB: $POSTGRES_DB, Password: $POSTGRES_PASSWORD" >> /root/postgres-credentials.txt
+        echo "Postgres $i - Host: 127.0.0.1:$POSTGRES_PORT, User: $POSTGRES_USER, DB: $POSTGRES_DB, Password: $POSTGRES_PASSWORD" >> /root/postgres-credentials.txt
 
         sleep 2
       done
@@ -75,17 +76,20 @@ write_files:
         POSTGRES_PORT=$((POSTGRES_BASE_PORT + i - 1))
 
         # Configurar DATABASE_URL para conectar a PostgreSQL
+        # Usar 127.0.0.1 en lugar de localhost para evitar problemas de resolución DNS
         POSTGRES_USER="langflow"
         POSTGRES_PASSWORD="passw0rd"
         POSTGRES_DB="langflow_db"
-        DATABASE_URL="postgresql://$${POSTGRES_USER}:$${POSTGRES_PASSWORD}@localhost:$${POSTGRES_PORT}/$${POSTGRES_DB}"
+        DATABASE_URL="postgresql://$${POSTGRES_USER}:$${POSTGRES_PASSWORD}@127.0.0.1:$${POSTGRES_PORT}/$${POSTGRES_DB}"
 
         echo "Iniciando Langflow: $LANGFLOW_CONTAINER en puerto $LANGFLOW_PORT" | tee -a /var/log/services-setup.log
         podman run -d \
           --name $LANGFLOW_CONTAINER \
-          -p $LANGFLOW_PORT:7860 \
+          --network host \
           -e LANGFLOW_DATABASE_URL="$DATABASE_URL" \
           -e LANGFLOW_AUTO_LOGIN=true \
+          -e LANGFLOW_HOST=0.0.0.0 \
+          -e LANGFLOW_PORT=$LANGFLOW_PORT \
           -v $LANGFLOW_VOLUME:/app/langflow \
           --restart unless-stopped \
           docker.io/langflowai/langflow:latest
@@ -109,6 +113,125 @@ write_files:
 
       echo "Configuración completada." | tee -a /var/log/services-setup.log
       echo "Credenciales de Postgres guardadas en /root/postgres-credentials.txt" | tee -a /var/log/services-setup.log
+
+  - path: /root/setup-crm-database.sh
+    permissions: '0755'
+    content: |
+      #!/bin/bash
+      set -e
+
+      INSTANCES=${langflow_instances}
+      POSTGRES_BASE_PORT=${postgres_base_port}
+
+      echo "=== Configurando tabla CRM en bases de datos ===" | tee -a /var/log/crm-setup.log
+
+      # Configurar CRM table en cada instancia de PostgreSQL
+      for i in $(seq 1 $INSTANCES); do
+        POSTGRES_PORT=$((POSTGRES_BASE_PORT + i - 1))
+        POSTGRES_CONTAINER="postgres-$${i}"
+
+        echo "Configurando CRM en PostgreSQL instancia $i (puerto $POSTGRES_PORT)..." | tee -a /var/log/crm-setup.log
+
+        # Esperar a que PostgreSQL esté listo
+        MAX_RETRIES=15
+        RETRY_COUNT=0
+
+        while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+          if podman exec $POSTGRES_CONTAINER pg_isready -U langflow > /dev/null 2>&1; then
+            echo "  ✓ PostgreSQL instancia $i está listo" | tee -a /var/log/crm-setup.log
+            break
+          fi
+
+          echo "  ⚠ Esperando a que PostgreSQL instancia $i esté listo (intento $((RETRY_COUNT + 1))/$MAX_RETRIES)..." | tee -a /var/log/crm-setup.log
+          sleep 3
+          RETRY_COUNT=$((RETRY_COUNT + 1))
+        done
+
+        if [ $RETRY_COUNT -eq $MAX_RETRIES ]; then
+          echo "  ✗ PostgreSQL instancia $i no respondió" | tee -a /var/log/crm-setup.log
+          continue
+        fi
+
+        # Crear la tabla crm_data e insertar datos
+        echo "  → Creando tabla crm_data e insertando datos..." | tee -a /var/log/crm-setup.log
+        podman exec $POSTGRES_CONTAINER psql -U langflow -d langflow_db <<'EOSQL'
+-- Crear tabla crm_data
+CREATE TABLE IF NOT EXISTS crm_data (
+    id SERIAL PRIMARY KEY,
+    nombre_completo TEXT NOT NULL,
+    numero_documento BIGINT NOT NULL,
+    edad INTEGER NOT NULL,
+    estado_laboral TEXT NOT NULL,
+    ingreso_mensual INTEGER NOT NULL,
+    egresos_mensuales INTEGER NOT NULL,
+    tarjeta_de_credito_bronce BOOLEAN NOT NULL,
+    tarjeta_de_credito_plata BOOLEAN NOT NULL,
+    tarjeta_de_credito_oro BOOLEAN NOT NULL,
+    cuenta_ahorros BOOLEAN NOT NULL,
+    seguro_mascotas BOOLEAN NOT NULL,
+    seguro_desempleo BOOLEAN NOT NULL,
+    complemento_medico BOOLEAN NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Crear índices para búsquedas comunes
+CREATE INDEX IF NOT EXISTS idx_crm_numero_documento ON crm_data(numero_documento);
+CREATE INDEX IF NOT EXISTS idx_crm_estado_laboral ON crm_data(estado_laboral);
+CREATE INDEX IF NOT EXISTS idx_crm_ingreso ON crm_data(ingreso_mensual);
+
+-- Insertar datos (solo si la tabla está vacía)
+INSERT INTO crm_data (nombre_completo, numero_documento, edad, estado_laboral, ingreso_mensual, egresos_mensuales, tarjeta_de_credito_bronce, tarjeta_de_credito_plata, tarjeta_de_credito_oro, cuenta_ahorros, seguro_mascotas, seguro_desempleo, complemento_medico)
+SELECT * FROM (VALUES
+    ('Camila Lopez', 18531599, 19, 'Pensionado', 2500, 1500, true, true, true, false, true, true, true),
+    ('Alejandra Prieto', 10133530, 32, 'Empleado', 2500, 2000, true, false, true, true, true, true, true),
+    ('Daniela Rincon', 61617074, 69, 'Empleado', 2500, 2200, true, true, true, true, true, true, true),
+    ('Monica alvarez', 75715932, 47, 'Empleado', 2500, 1800, false, false, true, true, true, true, true),
+    ('Ana Martinez', 11620162, 32, 'Estudiante', 2500, 1900, true, true, false, true, false, true, false),
+    ('Esteban Quintero', 27053089, 41, 'Informal', 2500, 1500, false, true, true, true, true, true, true),
+    ('Diana Morales', 14437506, 61, 'Empleado', 2500, 2000, true, true, false, false, false, false, false),
+    ('Tatiana Beltran', 25549169, 66, 'Estudiante', 5600, 2200, true, true, true, true, true, true, true),
+    ('Paula Rojas', 11710367, 26, 'Informal', 2500, 1800, true, true, true, false, true, false, true),
+    ('Felipe Castro', 29020625, 55, 'Independiente', 3500, 1900, true, false, true, true, true, true, true),
+    ('Santiago Herrera', 24541466, 68, 'Independiente', 1800, 1500, false, true, true, true, true, true, true),
+    ('Laura Torres', 35035035, 45, 'Empleado', 8000, 2000, true, false, false, true, true, true, true),
+    ('Marcela Leon', 89646901, 34, 'Empleado', 1800, 2200, false, true, true, true, false, true, true),
+    ('Oscar Lozano', 11838767, 51, 'Empleado', 12000, 1800, true, true, false, false, true, true, true),
+    ('Mateo Suarez', 13273528, 51, 'Independiente', 1800, 1900, true, true, true, true, false, false, true),
+    ('Pilar Mejia', 12762427, 31, 'Empleado', 3500, 1500, true, true, true, false, true, true, true),
+    ('Viviana Duarte', 10204122, 24, 'Independiente', 1200, 2000, true, true, true, true, true, false, false),
+    ('Nicolas Molina', 12480633, 45, 'Informal', 3500, 2200, false, false, true, true, true, true, true),
+    ('Luz Daza', 10493988, 27, 'Independiente', 900, 1800, true, true, true, true, true, true, false),
+    ('Andres Garcia', 39016698, 44, 'Estudiante', 2500, 1900, false, false, false, true, true, true, true),
+    ('Sebastian Vega', 11728784, 32, 'Empleado', 1800, 1500, true, true, true, true, true, true, true),
+    ('Luis Fernandez', 12705329, 56, 'Informal', 2500, 2000, true, true, false, false, true, true, true),
+    ('Hernan Cardenas', 97559056, 22, 'Empleado', 1800, 2200, true, true, true, true, false, true, true),
+    ('Natalia Jimenez', 13481931, 57, 'Desempleado', 8000, 1800, true, true, true, false, true, true, true),
+    ('Carlos Rodriguez', 16556640, 36, 'Independiente', 8000, 1900, false, true, true, true, false, false, true),
+    ('Valentina Ortiz', 68744720, 63, 'Empleado', 5000, 1500, true, false, true, true, true, true, true),
+    ('Javier Ramirez', 52723624, 69, 'Independiente', 2500, 2000, false, true, true, true, true, false, true),
+    ('Ricardo Silva', 72078781, 35, 'Independiente', 5000, 2200, true, false, false, true, true, true, false),
+    ('Julian Castano', 90158223, 44, 'Empleado', 2500, 1800, true, true, true, true, true, true, true),
+    ('David Patino', 13546408, 49, 'Pensionado', 2500, 1900, true, true, false, false, true, true, false)
+) AS v(nombre_completo, numero_documento, edad, estado_laboral, ingreso_mensual, egresos_mensuales, tarjeta_de_credito_bronce, tarjeta_de_credito_plata, tarjeta_de_credito_oro, cuenta_ahorros, seguro_mascotas, seguro_desempleo, complemento_medico)
+WHERE NOT EXISTS (SELECT 1 FROM crm_data LIMIT 1);
+
+-- Permisos
+GRANT ALL PRIVILEGES ON TABLE crm_data TO langflow;
+GRANT USAGE, SELECT ON SEQUENCE crm_data_id_seq TO langflow;
+EOSQL
+
+        if [ $? -eq 0 ]; then
+          # Verificar cuántos registros se insertaron
+          RECORD_COUNT=$(podman exec $POSTGRES_CONTAINER psql -U langflow -d langflow_db -t -c "SELECT COUNT(*) FROM crm_data;")
+          echo "  ✓ Tabla CRM configurada exitosamente: $RECORD_COUNT registros" | tee -a /var/log/crm-setup.log
+        else
+          echo "  ✗ Error al configurar tabla CRM" | tee -a /var/log/crm-setup.log
+        fi
+
+        sleep 1
+      done
+
+      echo "=== Configuración de CRM completada ===" | tee -a /var/log/crm-setup.log
 
   - path: /root/configure-api-keys.sh
     permissions: '0755'
@@ -139,7 +262,7 @@ write_files:
 
         while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
           # Obtener token via auto_login
-          LOGIN_RESPONSE=$$(curl -s -X GET "http://localhost:$${LANGFLOW_PORT}/api/v1/auto_login" 2>/dev/null || echo "")
+          LOGIN_RESPONSE=$$(curl -s -X GET "http://127.0.0.1:$${LANGFLOW_PORT}/api/v1/auto_login" 2>/dev/null || echo "")
 
           if [ -n "$$LOGIN_RESPONSE" ]; then
             TOKEN=$$(echo "$$LOGIN_RESPONSE" | grep -o '"access_token":"[^"]*' | cut -d'"' -f4)
@@ -161,7 +284,7 @@ write_files:
         fi
 
         # Crear la variable global API_KEY
-        VARIABLE_RESPONSE=$$(curl -s -w "\nHTTP_STATUS:%%{http_code}" -X POST "http://localhost:$${LANGFLOW_PORT}/api/v1/variables/" \
+        VARIABLE_RESPONSE=$$(curl -s -w "\nHTTP_STATUS:%%{http_code}" -X POST "http://127.0.0.1:$${LANGFLOW_PORT}/api/v1/variables/" \
           -H "Content-Type: application/json" \
           -H "Authorization: Bearer $$TOKEN" \
           -d "{\"name\":\"API_KEY\",\"value\":\"$$API_KEY\",\"type\":\"Credential\",\"default_fields\":[\"OpenAI API Key\",\"Anthropic API Key\",\"Google API Key\"]}" 2>/dev/null || echo "")
@@ -199,10 +322,13 @@ runcmd:
   # Ejecutar el script para iniciar los servicios
   - /root/start-services.sh
 
+  # Configurar tabla CRM en PostgreSQL (ejecutar en background)
+  - nohup /root/setup-crm-database.sh > /var/log/crm-setup.log 2>&1 &
+
   # Configurar variables API_KEY en Langflow (ejecutar en background)
   - nohup /root/configure-api-keys.sh > /var/log/api-key-setup.log 2>&1 &
 
   # Configurar systemd para auto-inicio de contenedores (opcional)
   - systemctl enable podman-restart.service || true
 
-final_message: "Sistema aprovisionado correctamente. ${langflow_instances} instancias de Postgres y ${langflow_instances} instancias de Langflow están ejecutándose. La configuración de API_KEY se completará en 1-2 minutos (ver /var/log/api-key-setup.log)."
+final_message: "Sistema aprovisionado correctamente. ${langflow_instances} instancias de Postgres y ${langflow_instances} instancias de Langflow están ejecutándose. La configuración de API_KEY y tabla CRM se completará en 1-2 minutos (ver /var/log/api-key-setup.log y /var/log/crm-setup.log)."
