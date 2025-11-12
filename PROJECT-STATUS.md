@@ -116,9 +116,16 @@ Ve a: https://cloud.ibm.com/schematics/workspaces
 
 ### Públicas
 
-| Variable | Descripción | Default |
-|----------|-------------|---------|
-| `ssh_public_key` | Clave SSH pública | `ssh-rsa AAAAB3...` |
+| Variable | Descripción | Valor |
+|----------|-------------|-------|
+| `ssh_public_key` | Clave SSH pública | Contenido de `ssh-key-langflow.pub` |
+
+**Obtener la clave SSH pública**:
+```bash
+cat ssh-key-langflow.pub
+```
+
+Ver [SSH-KEYS.md](SSH-KEYS.md) para más opciones.
 | `region` | Región IBM Cloud | `us-south` |
 | `zone` | Zona dentro de región | `us-south-1` |
 | `vsi_count` | Número de VSIs | `2` |

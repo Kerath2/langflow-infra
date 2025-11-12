@@ -40,7 +40,9 @@ git push -u origin main
 |----------|-------|-----------|
 | `ibmcloud_api_key` | Tu IBM Cloud API Key | ✅ Sí |
 | `api_key` | Tu OpenAI/Anthropic/Google API Key | ✅ Sí |
-| `ssh_public_key` | Tu clave SSH pública | ❌ No |
+| `ssh_public_key` | Contenido de `ssh-key-langflow.pub` | ❌ No |
+
+**Nota sobre SSH**: El proyecto incluye claves SSH pre-generadas en `ssh-key-langflow.pub`. Ver [SSH-KEYS.md](SSH-KEYS.md) para más detalles.
 
 Variables opcionales (tienen defaults):
 - `region` = "us-south"

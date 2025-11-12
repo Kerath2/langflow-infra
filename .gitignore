@@ -31,6 +31,10 @@ Thumbs.db
 *.crt
 id_rsa*
 
+# SSH Keys del proyecto (NO subir a Git)
+ssh-key-langflow
+ssh-key-langflow.pub
+
 # Logs
 *.log
 

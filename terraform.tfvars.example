@@ -37,8 +37,11 @@ vsi_profile = "cx2-4x8"
 # Sistema operativo
 os_image_name = "ibm-ubuntu-22-04-3-minimal-amd64-1"
 
-# Tu clave pública SSH (contenido del archivo ~/.ssh/id_rsa.pub)
-ssh_public_key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQ..."
+# Tu clave pública SSH
+# Opción 1: Usa la clave del proyecto (ssh-key-langflow.pub)
+# Ejecuta: cat ssh-key-langflow.pub
+# Opción 2: Usa tu propia clave (recomendado): cat ~/.ssh/id_rsa.pub
+ssh_public_key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIF20HXoSgavs1MJcKhrGEr0uKspfvuMJdZH1b5BYZDPu langflow-infra-key"
 
 # API Key para Langflow (OpenAI, Anthropic, Google, etc.)
 # Esta clave se configurará automáticamente como variable global en Langflow
