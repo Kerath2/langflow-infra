@@ -55,8 +55,8 @@ enable_floating_ips = true
 langflow_enabled = true
 
 # Número de instancias de Langflow por VSI
-# Ejemplo: 2 VSIs × 3 instancias = 6 instancias totales de Langflow
-langflow_instances_per_vsi = 3
+# Ejemplo: 2 VSIs × 2 instancias = 4 instancias totales de Langflow
+langflow_instances_per_vsi = 2
 
 # Puerto base para Langflow (se incrementará automáticamente: 7861, 7862, 7863...)
 langflow_base_port = 7861
