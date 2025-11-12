@@ -67,9 +67,9 @@ variable "enable_public_gateway" {
 
 # Compute Configuration
 variable "vsi_count" {
-  description = "Número de VSIs a crear"
+  description = "Número de VSIs a crear (1 VSI soporta múltiples usuarios)"
   type        = number
-  default     = 2
+  default     = 1
   validation {
     condition     = var.vsi_count > 0 && var.vsi_count <= 100
     error_message = "El número de VSIs debe estar entre 1 y 100."
@@ -77,9 +77,9 @@ variable "vsi_count" {
 }
 
 variable "vsi_profile" {
-  description = "Perfil de la VSI (determina CPU y RAM)"
+  description = "Perfil de la VSI (determina CPU y RAM). cx2-2x4 = 2 vCPU, 4GB RAM (~$65/mes)"
   type        = string
-  default     = "cx2-4x8"
+  default     = "cx2-2x4"
 }
 
 variable "os_image_name" {
@@ -113,9 +113,9 @@ variable "langflow_enabled" {
 }
 
 variable "langflow_instances_per_vsi" {
-  description = "Número de instancias de Langflow a ejecutar por VSI"
+  description = "Número de instancias de Langflow a ejecutar por VSI (1 instancia soporta múltiples usuarios)"
   type        = number
-  default     = 2
+  default     = 1
   validation {
     condition     = var.langflow_instances_per_vsi > 0 && var.langflow_instances_per_vsi <= 10
     error_message = "El número de instancias de Langflow debe estar entre 1 y 10."

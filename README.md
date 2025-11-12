@@ -6,11 +6,12 @@ Infraestructura como código (IaC) con Terraform para desplegar múltiples insta
 
 Despliega automáticamente:
 - ✅ VPC con subnet y security groups
-- ✅ N máquinas virtuales (VSIs) en IBM Cloud
-- ✅ PostgreSQL (contenedores Podman)
-- ✅ Langflow (contenedores Podman)
+- ✅ 1 máquina virtual (VSI) en IBM Cloud (configurable a más)
+- ✅ 1 PostgreSQL (contenedor Podman)
+- ✅ 1 Langflow (contenedor Podman) - **soporta múltiples usuarios simultáneos**
 - ✅ Variable global `API_KEY` pre-configurada en Langflow
-- ✅ IPs públicas para acceso
+- ✅ IP pública para acceso
+- ✅ Costo: ~$65/mes (cx2-2x4: 2 vCPU, 4GB RAM)
 
 ## 🚀 Deploy Rápido con IBM Cloud Schematics
 
@@ -46,9 +47,9 @@ git push -u origin main
 
 Variables opcionales (tienen defaults):
 - `region` = "us-south"
-- `vsi_count` = 2
-- `vsi_profile` = "cx2-4x8"
-- `langflow_instances_per_vsi` = 2
+- `vsi_count` = 1 (1 VSI para múltiples usuarios)
+- `vsi_profile` = "cx2-2x4" (2 vCPU, 4GB RAM - ~$65/mes)
+- `langflow_instances_per_vsi` = 1 (soporta múltiples usuarios)
 
 ### Paso 4: Deploy
 
@@ -59,17 +60,18 @@ Variables opcionales (tienen defaults):
 
 ### Paso 5: Accede a Langflow
 
-Ve a la pestaña **"Outputs"** en Schematics para ver las URLs de Langflow.
+Ve a la pestaña **"Outputs"** en Schematics para ver la URL de Langflow.
 
 **Ejemplo**:
 ```
-http://169.48.123.45:7861
-http://169.48.123.45:7862
-http://169.48.123.46:7861
-http://169.48.123.46:7862
+http://169.48.123.45:7861  # Una sola instancia para múltiples usuarios
 ```
 
 ⏱️ **Espera 3-5 minutos adicionales** después del apply para que cloud-init complete la instalación.
+
+**💡 Múltiples usuarios pueden usar la misma instancia simultáneamente.**
+
+Para escalar (más VSIs o instancias), ver [SIMPLIFICAR-A-1-INSTANCIA.md](SIMPLIFICAR-A-1-INSTANCIA.md).
 
 ## 📖 Documentación Completa
 
