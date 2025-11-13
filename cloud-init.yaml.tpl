@@ -93,12 +93,10 @@ write_files:
 
         # Crear la tabla crm_data en el esquema crm
         echo "  → Creando tabla crm.crm_data..." | tee -a /var/log/crm-setup.log
-        podman exec $POSTGRES_CONTAINER psql -U langflow -d langflow_db -c "CREATE TABLE IF NOT EXISTS crm.crm_data (id SERIAL PRIMARY KEY, nombre_completo TEXT NOT NULL, numero_documento BIGINT NOT NULL, edad INTEGER NOT NULL, estado_laboral TEXT NOT NULL, ingreso_mensual INTEGER NOT NULL, egresos_mensuales INTEGER NOT NULL, tarjeta_de_credito_bronce BOOLEAN NOT NULL, tarjeta_de_credito_plata BOOLEAN NOT NULL, tarjeta_de_credito_oro BOOLEAN NOT NULL, cuenta_ahorros BOOLEAN NOT NULL, seguro_mascotas BOOLEAN NOT NULL, seguro_desempleo BOOLEAN NOT NULL, complemento_medico BOOLEAN NOT NULL);"
-        podman exec $POSTGRES_CONTAINER psql -U langflow -d langflow_db -c "CREATE INDEX IF NOT EXISTS idx_crm_numero_documento ON crm.crm_data(numero_documento);"
+        podman exec $POSTGRES_CONTAINER psql -U langflow -d langflow_db -c "CREATE TABLE IF NOT EXISTS crm.crm_data (numero_documento BIGINT PRIMARY KEY, nombre_completo TEXT NOT NULL, edad INTEGER NOT NULL, estado_laboral TEXT NOT NULL, ingreso_mensual INTEGER NOT NULL, egresos_mensuales INTEGER NOT NULL, tarjeta_de_credito_bronce BOOLEAN NOT NULL, tarjeta_de_credito_plata BOOLEAN NOT NULL, tarjeta_de_credito_oro BOOLEAN NOT NULL, cuenta_ahorros BOOLEAN NOT NULL, seguro_mascotas BOOLEAN NOT NULL, seguro_desempleo BOOLEAN NOT NULL, complemento_medico BOOLEAN NOT NULL);"
         podman exec $POSTGRES_CONTAINER psql -U langflow -d langflow_db -c "CREATE INDEX IF NOT EXISTS idx_crm_estado_laboral ON crm.crm_data(estado_laboral);"
         podman exec $POSTGRES_CONTAINER psql -U langflow -d langflow_db -c "CREATE INDEX IF NOT EXISTS idx_crm_ingreso ON crm.crm_data(ingreso_mensual);"
         podman exec $POSTGRES_CONTAINER psql -U langflow -d langflow_db -c "GRANT ALL PRIVILEGES ON TABLE crm.crm_data TO langflow;"
-        podman exec $POSTGRES_CONTAINER psql -U langflow -d langflow_db -c "GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA crm TO langflow;"
 
         if [ $? -eq 0 ]; then
           echo "  ✓ Tabla crm_data creada exitosamente" | tee -a /var/log/crm-setup.log
