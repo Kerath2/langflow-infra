@@ -77,9 +77,9 @@ variable "vsi_count" {
 }
 
 variable "vsi_profile" {
-  description = "Perfil de la VSI (determina CPU y RAM). mx2-2x16 = 2 vCPU, 16GB RAM (Memory optimized)"
+  description = "Perfil de la VSI (determina CPU y RAM). bx2-4x16 = 4 vCPU, 16GB RAM (Balanced)"
   type        = string
-  default     = "mx2-2x16"
+  default     = "bx2-4x16"
 }
 
 variable "os_image_name" {
